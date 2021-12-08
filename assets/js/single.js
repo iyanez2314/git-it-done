@@ -1,4 +1,23 @@
 var issueContainerEl = document.querySelector("#issues-container");
+var limitWarningEl = document.querySelector("#limit-warning");
+var repoNameEl = document.querySelector("#repo-name");
+
+
+var getRepoName = function(){
+    // grab repo name from url query string
+    var queryString = document.location.search;
+    var repoName = queryString.split("=")[1];
+
+    if (repoName){
+        // display repo name on the page 
+        repoNameEl.textContent = repoName;
+
+        getRepoIssues(repoName);
+    } else{
+        // if no repo was given, redirect to the homepage
+        document.location.replace("./index.html");
+    }
+}
 
 var getRepoIssues = function(repo){
     var apiUrl = "https://api.github.com/repos/" + repo + "/issues?direction=asc";
@@ -9,10 +28,18 @@ var getRepoIssues = function(repo){
             response.json().then(function(data){
                 // pass response data to dom function 
                 displayIssues(data);
+
+            // check if api has paginates issues
+            if (response.headers.get("Link")){
+                displayWarning(repo)
+            }
+            
+
             });
         }
         else {
-            alert("There was a problem with your request");;
+            // if not succesful, redirect to homepage
+            document.location.replace('./index.html');
         }
     });
     console.log(repo)
@@ -23,16 +50,17 @@ var displayIssues = function(issues){
         issueContainerEl.textContent = "This repo has no open issues!";
         return;
     }
-    
+        //loop over repos
     for (var i = 0; i < issues.length; i++){
-        // create a link element to take users to the issue on github
-        var issueEl = document.createElement('a');
-        issueEl.classList= "list-item flex-row justify-space-between align-center";
-        issueEl.setAttribute("href", issues[i].html_url);
-        issueEl.setAttribute("target", "_blank");
+        // format repo name 
+        var repoName = repos[i].owner.login + "/" + repos[i].name;
 
-        
-    
+        // create a link for each repo
+        var repoEl = document.createElement("a");
+        repoEl.classList= "list-item flex-row justify-space-between align-center";
+        repoEl.setAttribute("href", "./single-repo.html?repo=" + repoName);
+
+
         // create span to hold issue title 
         var titleEl = document.createElement("span");
         titleEl.textContent = issues[i].title;
@@ -55,6 +83,15 @@ var displayIssues = function(issues){
 
         issueContainerEl.appendChild(issueEl);
     }
+    }
+    var displayWarning = function(repo){
+        var linkEl = document.createElement("a");
+        linkEl.textContent ="See more Issues On GitHub.com";
+        linkEl.setAttribute("href", "https://github.com/" + repo + "/issues");
+        linkEl.setAttribute("target", "_blank");
+
+        // append to warning container
+        limitWarningEl.appendChild(linkEl);
     
 };
 
